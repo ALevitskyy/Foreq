@@ -9,7 +9,6 @@ from pathlib import Path
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 import random
-import datetime
 
 def load_spreadsheet(csv_path):
     table = pd.read_csv(csv_path, 
@@ -28,8 +27,8 @@ def random_timestamp(start, end):
 class DataManager:
     def __init__(self, 
                  data_path = "./data",
-                horizons = {"1M":1,"5M":5,"15M":15,
-                            "30M":30,"1H":60,"2H":120,
+                horizons = {"1T":1,"5T":5,"15T":15,
+                            "30T":30,"1H":60,"2H":120,
                            "4H":240, "8H":420, "12H":720,
                            "16H":960, "24H":1440},
                 channel_size = 256):
@@ -38,9 +37,6 @@ class DataManager:
         self.start_end = {}
         self.horizons = horizons
         self.channel_size = channel_size
-        
-    def get_sample(self,currency):
-        index = self.get_random_timestamp(currency)
         
     def load_currency(self, currency_path):
         file_list = []
@@ -56,12 +52,14 @@ class DataManager:
                 start = table.index.min()+relativedelta(months = 16)
                 end = table.index.max()-relativedelta(years = 1)
                 self.start_end[currency.name] = [start, end]
-            
+    
+    def get_random_currency(self):
+        pass
+        
     def get_random_timestamp(self, currency):
         start, end = self.start_end[currency]
         random_time = random_timestamp(start, end)
-        index = self.raw_data[currency].index.get_loc(random_time, method = "nearest")
-        return index
+        return random_time
         
     def get_norm_params(self,
                         currency,
@@ -72,18 +70,39 @@ class DataManager:
                   currency,
                   horizon):
         pass
+    
+    def get_sample(self, currency, timestamp , horizon):
+        table = self.raw_data[currency]
+        reduced_table = table[table.index<timestamp]\
+                        .iloc[-(self.horizons[horizon]*self.channel_size):]
+        candles = reduced_table.resample(horizon)\
+                           .aggregate({"C":"last","O":"first"})\
+                           .dropna().iloc[-self.channel_size:]
+        return candles["C"] - candles["O"]
+        
+    def get_next_candle(self,currency, timestamp, horizon):
+        rounded_timestamp = timestamp.ceil(horizon)
+        table = self.raw_data[currency]
+        reduced_table = table[table.index>=rounded_timestamp]\
+                                    .iloc[0:self.horizons[horizon]]
+        candle = reduced_table.resample(horizon)\
+               .aggregate({"C":"last","O":"first"}).dropna().iloc[0]
+        return candle["C"] - candle["O"]
+    
+    def get_input(self, currency, timestamp):
+        pass
+    
+    def get_output(self, currency, timestamp):
+        pass
+    
+    def get_unprocessed_sample(self, currency, timestamp):
+        pass
+    
+    def get_random_unprocessed_sample(self):
+        pass
 
 def norm_params_stability():
     pass
+
 def splits_stability():
     pass
-def spreadsheet_load():
-    dataManager = DataManager()
-    dataManager.load_all()
-    table = dataManager.raw_data["cur1"]
-    return dataManager, table
-
-def aggregate():
-    table.resample("3T").aggregate({"C":"last","O":"first"}).dropna()
-    inda.ceil("3T")
-dataManager, table = spreadsheet_load()
