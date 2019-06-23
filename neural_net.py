@@ -108,7 +108,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, horizon=9, bins = 32, zero_init_residual=False,
+    def __init__(self, block, layers, input_channels = 11, horizon=9, bins = 32, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
@@ -127,8 +127,8 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv1d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv1d(input_channels, self.inplanes, kernel_size=7, stride=2, padding=3,
+                               bias=False) # 1st ARGUMENT - THE INPUT CHANNELLS
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
@@ -283,6 +283,6 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
     return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
     
-def make_net(horizon = 9, bins=32):
-    encoder = resnet34(horizon = horizon, bins = bins)
+def make_net(input_channels=11,horizon = 9, bins=32):
+    encoder = resnet18(input_channels=11,horizon = horizon, bins = bins)
     return encoder
